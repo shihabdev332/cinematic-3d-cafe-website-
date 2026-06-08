@@ -1,11 +1,25 @@
 import React, { Suspense, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Environment } from '@react-three/drei';
+import { OrbitControls, useGLTF, Environment, Html, useProgress } from '@react-three/drei';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 // Register ScrollTrigger plugin for animations
 gsap.registerPlugin(ScrollTrigger);
+
+// Loading Indicator Component
+const CanvasLoader = () => {
+  const { progress } = useProgress();
+  return (
+    <Html center>
+      <div className="flex flex-col items-center justify-center">
+        <span className="text-amber-500 font-mono text-sm tracking-widest whitespace-nowrap">
+          LOADING... {progress.toFixed(0)}%
+        </span>
+      </div>
+    </Html>
+  );
+};
 
 // First 3D Model Component - Coffee Cup
 const CoffeeCupModel = () => {
@@ -16,7 +30,6 @@ const CoffeeCupModel = () => {
 // Second 3D Model Component - Small Cafe Shop
 const CafeShopModel = () => {
   const { scene } = useGLTF('https://res.cloudinary.com/didqmq9xz/image/upload/v1780959682/Untitled_oqnwi7.glb');
-  // Reduced scale drastically for maximum zoom out effect
   return <primitive object={scene} scale={0.05} position={[0, -2, 0]} />; 
 };
 
@@ -26,7 +39,6 @@ const SpecialFeature = () => {
   const cardElementsRef = useRef([]);
 
   useEffect(() => {
-    // Media Query for mobile optimization check
     const isMobileDevice = window.matchMedia('(max-width: 768px)').matches;
 
     const animationContext = gsap.context(() => {
@@ -65,10 +77,9 @@ const SpecialFeature = () => {
       );
     }, mainSectionRef);
 
-    return () => animationContext.revert(); // Cleanup animations on unmount
+    return () => animationContext.revert(); 
   }, []);
 
-  // Helper function to dynamically collect card references
   const registerCardRef = (elementNode) => {
     if (elementNode && !cardElementsRef.current.includes(elementNode)) {
       cardElementsRef.current.push(elementNode);
@@ -80,7 +91,6 @@ const SpecialFeature = () => {
       ref={mainSectionRef}
       className="w-full min-h-screen bg-[#111111] text-white flex flex-col items-center px-6 md:px-12 lg:px-24 py-20 overflow-hidden"
     >
-      {/* Top Header Content Section */}
       <div ref={textHeaderRef} className="w-full max-w-3xl text-center mb-16 cursor-default">
         <span className="text-amber-500 text-xs font-bold tracking-[0.3em] uppercase mb-4 block">
           Two Worlds Collide
@@ -95,7 +105,6 @@ const SpecialFeature = () => {
         </p>
       </div>
 
-      {/* Grid Container for 3D Models */}
       <div className="w-full flex flex-col md:flex-row gap-8 lg:gap-12 justify-center items-stretch cursor-grab active:cursor-grabbing">
         
         {/* Left Side - Coffee Cup Card */}
@@ -104,10 +113,9 @@ const SpecialFeature = () => {
           className="w-full md:w-1/2 aspect-square md:h-[60vh] relative bg-[#1a1a1a] rounded-3xl overflow-hidden shadow-2xl border border-neutral-800 will-change-transform"
         >
           <Canvas dpr={[1, 1.5]} camera={{ position: [0, 1.5, 3.5], fov: 45 }} performance={{ min: 0.5 }}>
-            <Suspense fallback={null}>
+            <Suspense fallback={<CanvasLoader />}>
               <Environment preset="sunset" />
               <CoffeeCupModel />
-              {/* Zoom configuration for the small coffee cup */}
               <OrbitControls enableZoom={true} minDistance={2} maxDistance={6} autoRotate autoRotateSpeed={1.5} />
             </Suspense>
           </Canvas>
@@ -121,17 +129,14 @@ const SpecialFeature = () => {
           ref={registerCardRef}
           className="w-full md:w-1/2 aspect-square md:h-[60vh] relative bg-[#1a1a1a] rounded-3xl overflow-hidden shadow-2xl border border-neutral-800 will-change-transform"
         >
-          {/* Extremely pushed back camera position for massive zoom out */}
           <Canvas dpr={[1, 1.5]} camera={{ position: [60, 40, 60], fov: 50 }} performance={{ min: 0.5 }}>
-            <Suspense fallback={null}>
-              {/* Custom Warm Lighting setup */}
+            <Suspense fallback={<CanvasLoader />}>
               <ambientLight intensity={0.5} />
               <directionalLight position={[40, 50, 40]} intensity={1.5} color="#ffedd5" /> 
               <pointLight position={[-20, 20, 20]} color="#a855f7" intensity={2} distance={100} /> 
               <pointLight position={[20, 10, -20]} color="#f59e0b" intensity={2} distance={100} /> 
               
               <CafeShopModel />
-              {/* Huge zoom limits allowed for the extreme zoomed out model */}
               <OrbitControls enableZoom={true} minDistance={10} maxDistance={200} autoRotate autoRotateSpeed={1.2} />
             </Suspense>
           </Canvas>
@@ -145,7 +150,7 @@ const SpecialFeature = () => {
   );
 };
 
-// Preloading models to avoid rendering delays
+// Preloading models immediately
 useGLTF.preload('https://res.cloudinary.com/didqmq9xz/image/upload/v1780954664/Untitled_pbyeba.glb');
 useGLTF.preload('https://res.cloudinary.com/didqmq9xz/image/upload/v1780959682/Untitled_oqnwi7.glb');
 
