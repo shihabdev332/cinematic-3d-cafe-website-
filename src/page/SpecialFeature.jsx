@@ -21,25 +21,13 @@ const CanvasLoader = () => {
   );
 };
 
-// 1. First Model - Coffee Bag
-const CoffeeBagModel = () => {
-  const { scene } = useGLTF('https://res.cloudinary.com/didqmq9xz/image/upload/v1781036356/Untitled_ruvhpu.glb');
-  return <primitive object={scene} scale={0.25} position={[0, -1, 0]} />;
-};
-
-// 2. Second Model - Coffee Machine
-const CoffeeMachineModel = () => {
-  const { scene } = useGLTF('https://res.cloudinary.com/didqmq9xz/image/upload/v1781036723/Untitled_zicwzi.glb');
-  return <primitive object={scene} scale={1.5} position={[0, -1.2, 0]} />;
-};
-
-// 3. Third Model - Coffee Cup
+// First 3D Model Component - Coffee Cup
 const CoffeeCupModel = () => {
   const { scene } = useGLTF('https://res.cloudinary.com/didqmq9xz/image/upload/v1780954664/Untitled_pbyeba.glb');
   return <primitive object={scene} scale={18} position={[0, -1.2, 0]} />;
 };
 
-// 4. Fourth Model - Small Cafe Shop
+// Second 3D Model Component - Small Cafe Shop
 const CafeShopModel = () => {
   const { scene } = useGLTF('https://res.cloudinary.com/didqmq9xz/image/upload/v1780959682/Untitled_oqnwi7.glb');
   return <primitive object={scene} scale={0.05} position={[0, -2, 0]} />; 
@@ -71,7 +59,7 @@ const SpecialFeature = () => {
         }
       );
 
-      // Animate all 4 3D model cards in a staggered grid
+      // Animate both 3D model cards
       gsap.fromTo(
         cardElementsRef.current,
         { opacity: 0, y: isMobileDevice ? 30 : 50 },
@@ -79,7 +67,7 @@ const SpecialFeature = () => {
           opacity: 1,
           y: 0,
           duration: 1.2,
-          stagger: 0.15,
+          stagger: 0.2,
           ease: 'power3.out',
           scrollTrigger: {
             trigger: mainSectionRef.current,
@@ -105,10 +93,10 @@ const SpecialFeature = () => {
     >
       <div ref={textHeaderRef} className="w-full max-w-3xl text-center mb-16 cursor-default">
         <span className="text-amber-500 text-xs font-bold tracking-[0.3em] uppercase mb-4 block">
-          The Complete Journey
+          Two Worlds Collide
         </span>
         <h2 className="text-4xl md:text-5xl font-serif font-normal leading-tight tracking-wide mb-6">
-          From the Soil to <br />
+          The Art of Brewing & <br />
           <span className="italic font-light text-neutral-300">Our Cozy Sanctuary</span>
         </h2>
         <p className="text-neutral-400 font-light leading-relaxed mx-auto max-w-xl text-sm md:text-base">
@@ -117,47 +105,12 @@ const SpecialFeature = () => {
         </p>
       </div>
 
-      {/* Changed to a CSS Grid to easily accommodate 4 cards */}
-      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 justify-center items-stretch cursor-grab active:cursor-grabbing">
+      <div className="w-full flex flex-col md:flex-row gap-8 lg:gap-12 justify-center items-stretch cursor-grab active:cursor-grabbing">
         
-        {/* Card 1 - Coffee Bag */}
+        {/* Left Side - Coffee Cup Card */}
         <div
           ref={registerCardRef}
-          className="w-full aspect-square md:h-[50vh] relative bg-[#1a1a1a] rounded-3xl overflow-hidden shadow-2xl border border-neutral-800 will-change-transform"
-        >
-          <Canvas dpr={[1, 1.5]} camera={{ position: [0, 1.5, 4], fov: 45 }} performance={{ min: 0.5 }}>
-            <Suspense fallback={<CanvasLoader />}>
-              <Environment preset="city" />
-              <CoffeeBagModel />
-              <OrbitControls enableZoom={true} minDistance={2} maxDistance={6} autoRotate autoRotateSpeed={1.5} />
-            </Suspense>
-          </Canvas>
-          <div className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full text-xs font-mono tracking-widest text-neutral-400 pointer-events-none uppercase select-none">
-            01. The Origin
-          </div>
-        </div>
-
-        {/* Card 2 - Coffee Machine */}
-        <div
-          ref={registerCardRef}
-          className="w-full aspect-square md:h-[50vh] relative bg-[#1a1a1a] rounded-3xl overflow-hidden shadow-2xl border border-neutral-800 will-change-transform"
-        >
-          <Canvas dpr={[1, 1.5]} camera={{ position: [0, 2, 5], fov: 45 }} performance={{ min: 0.5 }}>
-            <Suspense fallback={<CanvasLoader />}>
-              <Environment preset="city" />
-              <CoffeeMachineModel />
-              <OrbitControls enableZoom={true} minDistance={2} maxDistance={8} autoRotate autoRotateSpeed={1.5} />
-            </Suspense>
-          </Canvas>
-          <div className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full text-xs font-mono tracking-widest text-neutral-400 pointer-events-none uppercase select-none">
-            02. The Alchemy
-          </div>
-        </div>
-
-        {/* Card 3 - Coffee Cup */}
-        <div
-          ref={registerCardRef}
-          className="w-full aspect-square md:h-[50vh] relative bg-[#1a1a1a] rounded-3xl overflow-hidden shadow-2xl border border-neutral-800 will-change-transform"
+          className="w-full md:w-1/2 aspect-square md:h-[60vh] relative bg-[#1a1a1a] rounded-3xl overflow-hidden shadow-2xl border border-neutral-800 will-change-transform"
         >
           <Canvas dpr={[1, 1.5]} camera={{ position: [0, 1.5, 3.5], fov: 45 }} performance={{ min: 0.5 }}>
             <Suspense fallback={<CanvasLoader />}>
@@ -167,14 +120,14 @@ const SpecialFeature = () => {
             </Suspense>
           </Canvas>
           <div className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full text-xs font-mono tracking-widest text-neutral-400 pointer-events-none uppercase select-none">
-            03. The Ritual
+            Signature Blend
           </div>
         </div>
 
-        {/* Card 4 - Small Cafe Shop */}
+        {/* Right Side - Small Cafe Shop Card */}
         <div
           ref={registerCardRef}
-          className="w-full aspect-square md:h-[50vh] relative bg-[#1a1a1a] rounded-3xl overflow-hidden shadow-2xl border border-neutral-800 will-change-transform"
+          className="w-full md:w-1/2 aspect-square md:h-[60vh] relative bg-[#1a1a1a] rounded-3xl overflow-hidden shadow-2xl border border-neutral-800 will-change-transform"
         >
           <Canvas dpr={[1, 1.5]} camera={{ position: [60, 40, 60], fov: 50 }} performance={{ min: 0.5 }}>
             <Suspense fallback={<CanvasLoader />}>
@@ -188,7 +141,7 @@ const SpecialFeature = () => {
             </Suspense>
           </Canvas>
           <div className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full text-xs font-mono tracking-widest text-neutral-400 pointer-events-none uppercase select-none">
-            04. Our Sanctuary
+            Our Sanctuary
           </div>
         </div>
 
@@ -197,9 +150,7 @@ const SpecialFeature = () => {
   );
 };
 
-// Preloading models immediately to prevent pop-in
-useGLTF.preload('https://res.cloudinary.com/didqmq9xz/image/upload/v1781036356/Untitled_ruvhpu.glb');
-useGLTF.preload('https://res.cloudinary.com/didqmq9xz/image/upload/v1781036723/Untitled_zicwzi.glb');
+// Preloading models immediately
 useGLTF.preload('https://res.cloudinary.com/didqmq9xz/image/upload/v1780954664/Untitled_pbyeba.glb');
 useGLTF.preload('https://res.cloudinary.com/didqmq9xz/image/upload/v1780959682/Untitled_oqnwi7.glb');
 
