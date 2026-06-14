@@ -1,8 +1,9 @@
-import React, { useRef, useState, useLayoutEffect, Suspense } from 'react';
+import React, { useEffect, useRef, useState, useLayoutEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useGLTF, Environment, Float, PerspectiveCamera, OrbitControls } from '@react-three/drei';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import SpecialFeatureLoader from './SpecialFeatureLoader';
 import './SpecialFeature.css';
 
 // Register GSAP Plugin
@@ -29,7 +30,6 @@ const CoffeeCup = React.forwardRef(({ onLoadComplete, onHover, onHoverOut }, ref
         object={scene} 
         scale={[14.4, 14.4, 14.4]} 
         position={[0, -1.2, 0]} 
-        // 3D Model Hover Detection - Only active for mouse to fix mobile scrolling
         onPointerOver={(e) => {
           e.stopPropagation();
           if (e.pointerType === 'mouse') {
@@ -43,6 +43,21 @@ const CoffeeCup = React.forwardRef(({ onLoadComplete, onHover, onHoverOut }, ref
             document.body.style.cursor = 'auto';
           }
         }}
+        onPointerDown={(e) => {
+          if (e.pointerType === 'touch') {
+            onHover();
+          }
+        }}
+        onPointerUp={(e) => {
+          if (e.pointerType === 'touch') {
+            onHoverOut();
+          }
+        }}
+        onPointerCancel={(e) => {
+          if (e.pointerType === 'touch') {
+            onHoverOut();
+          }
+        }}
       />
     </Float>
   );
@@ -51,7 +66,8 @@ const CoffeeCup = React.forwardRef(({ onLoadComplete, onHover, onHoverOut }, ref
 export default function SpecialFeature() {
   const containerRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isHovered, setIsHovered] = useState(false); // Model hover state
+  const [isHovered, setIsHovered] = useState(false); // Model hover / touch state
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   // Refs
   const cameraRef = useRef(null);
@@ -65,6 +81,15 @@ export default function SpecialFeature() {
   const text4Ref = useRef(null);
   const text5Ref = useRef(null);
   const text6Ref = useRef(null); // Final Text
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsTouchDevice(navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
+    }
+  }, []);
+
+  const controlsEnabled = isHovered || isTouchDevice;
+  const contentVisibility = { visibility: isLoaded ? 'visible' : 'hidden' };
 
   useLayoutEffect(() => {
     if (!isLoaded || !modelRef.current || !cameraRef.current || !containerRef.current) return;
@@ -140,7 +165,7 @@ export default function SpecialFeature() {
   return (
     <section className="special-feature" ref={containerRef}>
       {/* Intro */}
-      <div className="sf-intro" ref={introRef}>
+      <div className="sf-intro" ref={introRef} style={contentVisibility}>
         <span className="sf-label">SPECIAL FEATURE</span>
         <h2 className="sf-heading">Experience Every Detail of Premium Coffee</h2>
         <p className="sf-desc">
@@ -149,42 +174,57 @@ export default function SpecialFeature() {
       </div>
 
       {/* 5 Floating Texts Sequence */}
-      <div className="sf-text-block right" ref={text1Ref}>
+      <div className="sf-text-block right" ref={text1Ref} style={contentVisibility}>
         <h3>Premium Roasted Beans</h3>
         <p>Carefully selected beans roasted to perfection.</p>
       </div>
-      <div className="sf-text-block left" ref={text2Ref}>
+      <div className="sf-text-block left" ref={text2Ref} style={contentVisibility}>
         <h3>Ethically Sourced</h3>
         <p>Harvested from sustainable, high-altitude farms for the purest quality.</p>
       </div>
-      <div className="sf-text-block right" ref={text3Ref}>
+      <div className="sf-text-block right" ref={text3Ref} style={contentVisibility}>
         <h3>Rich Aroma</h3>
         <p>An unforgettable fragrance crafted for true coffee lovers.</p>
       </div>
-      <div className="sf-text-block left" ref={text4Ref}>
+      <div className="sf-text-block left" ref={text4Ref} style={contentVisibility}>
         <h3>Precision Brewing</h3>
         <p>Engineered to extract the perfect tasting notes, every single time.</p>
       </div>
-      <div className="sf-text-block right" ref={text5Ref}>
+      <div className="sf-text-block right" ref={text5Ref} style={contentVisibility}>
         <h3>Exceptional Taste</h3>
         <p>Balanced flavor with smooth texture and deep character.</p>
       </div>
 
       {/* Final Text (Center) */}
-      <div className="sf-text-block center final" ref={text6Ref}>
+      <div className="sf-text-block center final" ref={text6Ref} style={contentVisibility}>
         <h3>Crafted for the Perfect Moment</h3>
         <p>Every sip of Ivori Coffee is designed to deliver warmth, comfort, and an unforgettable premium experience.</p>
       </div>
 
       {/* 3D Canvas Layer */}
-      <div className="sf-canvas-container">
-        <Canvas gl={{ alpha: true, antialias: true }} dpr={[1, 2]}>
+      <div
+        className="sf-canvas-container"
+        onPointerDown={(e) => {
+          // when user touches the canvas area on touch devices, enable controls
+          if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+            setIsHovered(true);
+          }
+        }}
+        onPointerUp={(e) => {
+          if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+            setIsHovered(false);
+          }
+        }}
+        onPointerCancel={() => setIsHovered(false)}
+        onPointerLeave={() => setIsHovered(false)}
+      >
+        <Canvas gl={{ alpha: true, antialias: true }} dpr={[1, 2]} style={{ touchAction: 'none' }}>
           <PerspectiveCamera makeDefault ref={cameraRef} />
           
           {/* Active only on hover for smooth scrolling anywhere else */}
           <OrbitControls 
             ref={controlsRef} 
-            enabled={isHovered} 
+            enabled={controlsEnabled} 
             enablePan={false}
             enableZoom={true}
           />
@@ -204,6 +244,7 @@ export default function SpecialFeature() {
           </Suspense>
         </Canvas>
       </div>
+      {!isLoaded && <SpecialFeatureLoader label="Loading Experience" />}
     </section>
   );
 }
