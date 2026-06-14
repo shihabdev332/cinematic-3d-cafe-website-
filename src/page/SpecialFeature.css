@@ -44,7 +44,8 @@ p {
   z-index: 10;
   width: 90%;
   max-width: 650px;
-  pointer-events: none;
+  pointer-events: auto;
+  touch-action: pan-y;
 }
 
 .sf-label {
@@ -74,7 +75,8 @@ p {
   transform: translateY(-50%);
   width: 380px; 
   z-index: 10;
-  pointer-events: none;
+  pointer-events: auto;
+  touch-action: pan-y;
   padding: 40px; 
   background: rgba(20, 20, 20, 0.7); 
   backdrop-filter: blur(20px); 
