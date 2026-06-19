@@ -6,20 +6,20 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SpecialFeatureLoader from './SpecialFeatureLoader';
 import './SpecialFeature.css';
 
-// Register GSAP ScrollTrigger Plugin
+// Register GSAP ScrollTrigger Plugin for scroll animations
 gsap.registerPlugin(ScrollTrigger);
 
-// Preload the 3D model from Cloudinary URL
+// Preload the 3D model for performance optimization
 const GLB_URL = 'https://res.cloudinary.com/didqmq9xz/image/upload/v1780954664/Untitled_pbyeba.glb';
 useGLTF.preload(GLB_URL);
 
-// Coffee Cup 3D Component
+// Component for the 3D Coffee Cup
 const CoffeeCup = React.forwardRef(({ onLoadComplete, onHover, onHoverOut }, ref) => {
   const { scene } = useGLTF(GLB_URL);
 
   useLayoutEffect(() => {
     if (scene) {
-      // Add a 1.5-second delay to ensure the loader is visible for a premium feel
+      // Delay for premium loader feel
       const loadingDelayTimer = setTimeout(() => {
         onLoadComplete();
       }, 1500);
@@ -34,22 +34,24 @@ const CoffeeCup = React.forwardRef(({ onLoadComplete, onHover, onHoverOut }, ref
         object={scene} 
         scale={[14.4, 14.4, 14.4]} 
         position={[0, -1.2, 0]} 
+        dispose={null} // Memory leak optimization
         onPointerOver={(event) => {
           event.stopPropagation();
-          if (event.pointerType === 'mouse') {
-            onHover();
-            document.body.style.cursor = 'grab';
-          }
+          onHover();
+          document.body.style.cursor = 'grab';
         }}
         onPointerOut={(event) => {
-          if (event.pointerType === 'mouse') {
-            onHoverOut();
-            document.body.style.cursor = 'auto';
-          }
+          onHoverOut();
+          document.body.style.cursor = 'auto';
         }}
-        onPointerDown={(event) => event.pointerType === 'touch' && onHover()}
-        onPointerUp={(event) => event.pointerType === 'touch' && onHoverOut()}
-        onPointerCancel={(event) => event.pointerType === 'touch' && onHoverOut()}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          onHover(); // Touch interaction enable
+          document.body.style.cursor = 'grabbing';
+        }}
+        onPointerUp={() => {
+          document.body.style.cursor = 'grab';
+        }}
       />
     </Float>
   );
@@ -59,12 +61,12 @@ export default function SpecialFeature() {
   const containerRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isDragging, setIsDragging] = useState(false); // Track drag state for smooth rotation
 
-  // Fetch real-time loading progress for the 3D model
+  // Fetch real-time loading progress
   const { progress } = useProgress();
 
-  // References for GSAP animations and Three.js canvas
+  // References for Three.js and DOM elements
   const cameraRef = useRef(null);
   const modelRef = useRef(null);
   const controlsRef = useRef(null);
@@ -77,20 +79,9 @@ export default function SpecialFeature() {
   const featureText5Ref = useRef(null);
   const finalConclusionTextRef = useRef(null);
 
-  useEffect(() => {
-    // Detect if the user is on a touch device
-    if (typeof window !== 'undefined') {
-      setIsTouchDevice(navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
-    }
-  }, []);
-
-  // Disable orbit controls on mobile to prevent scroll locking issues
-  const areControlsEnabled = isTouchDevice ? false : isHovered;
-
   useLayoutEffect(() => {
     if (!isLoaded || !modelRef.current || !cameraRef.current || !containerRef.current) return;
 
-    // Utilize GSAP matchMedia to handle responsive scroll animations perfectly
     const matchMediaContext = gsap.matchMedia();
 
     matchMediaContext.add({
@@ -117,21 +108,17 @@ export default function SpecialFeature() {
         featureText4Ref.current, featureText5Ref.current, finalConclusionTextRef.current
       ];
 
-      // Reset initial styles explicitly so backward scrolling resets seamlessly
       gsap.set(allFloatingTexts, { opacity: 0, y: isMobile ? 20 : 40 });
       gsap.set(introTextRef.current, { opacity: 1, y: 0 });
       cameraRef.current.position.set(0, 0, 6.5);
       modelRef.current.scale.set(14.4, 14.4, 14.4);
       modelRef.current.rotation.set(0, 0, 0);
 
-      // Fade out the intro section initially
       scrollTimeline.to(introTextRef.current, { opacity: 0, y: isMobile ? -20 : -40, duration: 0.5, ease: "power1.inOut" }, 0);
 
-      // Define responsive scale and camera Y positions
       const finalModelScale = isMobile ? 22 : 34;
       const finalCameraYPosition = isMobile ? 4.5 : 6.8;
 
-      // Animate model scale and camera position continuously across the entire scroll
       scrollTimeline.to(modelRef.current.scale, { x: finalModelScale, y: finalModelScale, z: finalModelScale, ease: "none", duration: 6 }, 0);
       scrollTimeline.to(cameraRef.current.position, { y: finalCameraYPosition, z: isMobile ? 4 : 2.8, ease: "none", duration: 6 }, 0);
       
@@ -150,21 +137,18 @@ export default function SpecialFeature() {
 
       const baseRotationStep = Math.PI * 0.7; 
 
-      // Sequence texts and model rotation step-by-step
       allFloatingTexts.forEach((textElement, index) => {
         const sequenceStartTime = index * 1; 
 
         scrollTimeline.to(modelRef.current.rotation, { y: baseRotationStep * (index + 1), ease: "power2.inOut", duration: 1 }, sequenceStartTime);
         scrollTimeline.to(textElement, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, sequenceStartTime + 0.2);
 
-        // Fade out all texts except the final conclusion text
         if (index < 5) {
           scrollTimeline.to(textElement, { opacity: 0, y: isMobile ? -20 : -30, duration: 0.3, ease: "power2.in" }, sequenceStartTime + 0.8);
         }
       });
 
       return () => {
-        // Cleanup tweens to prevent memory leaks on resize or unmount
         gsap.killTweensOf(modelRef.current);
         gsap.killTweensOf(cameraRef.current);
       };
@@ -213,16 +197,27 @@ export default function SpecialFeature() {
         <p>Every sip of Ivori Coffee is designed to deliver warmth, comfort, and an unforgettable premium experience.</p>
       </div>
 
-      {/* 3D Canvas Implementation */}
-      <div className="sf-canvas-container">
-        <Canvas gl={{ alpha: true, antialias: true }} dpr={[1, 2]} style={{ touchAction: 'auto' }}>
+      {/* 3D Canvas - Optimized & Restricted Interactions */}
+      <div 
+        className="sf-canvas-container" 
+        style={{ touchAction: isHovered || isDragging ? 'none' : 'auto' }} // Prevents page scroll ONLY when touching the model
+      >
+        <Canvas 
+          gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }} 
+          dpr={[1, 1.5]} 
+          style={{ touchAction: 'inherit' }}
+        >
           <PerspectiveCamera makeDefault ref={cameraRef} />
           
           <OrbitControls 
             ref={controlsRef} 
-            enabled={areControlsEnabled} 
             enablePan={false}
-            enableZoom={true}
+            enableZoom={isHovered} // Zoom works ONLY when hovered
+            enableRotate={isHovered || isDragging} // Rotate works when hovered OR actively dragging
+            minDistance={3} // Prevents zooming in too much
+            maxDistance={10} // Prevents zooming out too much
+            onStart={() => setIsDragging(true)} // Keeps rotation active even if pointer leaves model while dragging
+            onEnd={() => setIsDragging(false)}
           />
 
           <Suspense fallback={null}>
