@@ -1,25 +1,29 @@
 import React, { useEffect, useRef, useState, useLayoutEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useGLTF, Environment, Float, PerspectiveCamera, OrbitControls } from '@react-three/drei';
+import { useGLTF, Environment, Float, PerspectiveCamera, OrbitControls, useProgress } from '@react-three/drei';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SpecialFeatureLoader from './SpecialFeatureLoader';
 import './SpecialFeature.css';
 
-// Register GSAP Plugin
+// Register GSAP ScrollTrigger Plugin
 gsap.registerPlugin(ScrollTrigger);
 
-// Preload the 3D model
+// Preload the 3D model from Cloudinary URL
 const GLB_URL = 'https://res.cloudinary.com/didqmq9xz/image/upload/v1780954664/Untitled_pbyeba.glb';
 useGLTF.preload(GLB_URL);
 
-// Coffee Cup Component
+// Coffee Cup 3D Component
 const CoffeeCup = React.forwardRef(({ onLoadComplete, onHover, onHoverOut }, ref) => {
   const { scene } = useGLTF(GLB_URL);
 
   useLayoutEffect(() => {
     if (scene) {
-      onLoadComplete();
+      // Add a 1.5-second delay to ensure the loader is visible for a premium feel
+      const loadingDelayTimer = setTimeout(() => {
+        onLoadComplete();
+      }, 1500);
+      return () => clearTimeout(loadingDelayTimer);
     }
   }, [scene, onLoadComplete]);
 
@@ -30,34 +34,22 @@ const CoffeeCup = React.forwardRef(({ onLoadComplete, onHover, onHoverOut }, ref
         object={scene} 
         scale={[14.4, 14.4, 14.4]} 
         position={[0, -1.2, 0]} 
-        onPointerOver={(e) => {
-          e.stopPropagation();
-          if (e.pointerType === 'mouse') {
+        onPointerOver={(event) => {
+          event.stopPropagation();
+          if (event.pointerType === 'mouse') {
             onHover();
             document.body.style.cursor = 'grab';
           }
         }}
-        onPointerOut={(e) => {
-          if (e.pointerType === 'mouse') {
+        onPointerOut={(event) => {
+          if (event.pointerType === 'mouse') {
             onHoverOut();
             document.body.style.cursor = 'auto';
           }
         }}
-        onPointerDown={(e) => {
-          if (e.pointerType === 'touch') {
-            onHover();
-          }
-        }}
-        onPointerUp={(e) => {
-          if (e.pointerType === 'touch') {
-            onHoverOut();
-          }
-        }}
-        onPointerCancel={(e) => {
-          if (e.pointerType === 'touch') {
-            onHoverOut();
-          }
-        }}
+        onPointerDown={(event) => event.pointerType === 'touch' && onHover()}
+        onPointerUp={(event) => event.pointerType === 'touch' && onHoverOut()}
+        onPointerCancel={(event) => event.pointerType === 'touch' && onHoverOut()}
       />
     </Float>
   );
@@ -66,106 +58,126 @@ const CoffeeCup = React.forwardRef(({ onLoadComplete, onHover, onHoverOut }, ref
 export default function SpecialFeature() {
   const containerRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isHovered, setIsHovered] = useState(false); // Model hover / touch state
+  const [isHovered, setIsHovered] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
-  // Refs
+  // Fetch real-time loading progress for the 3D model
+  const { progress } = useProgress();
+
+  // References for GSAP animations and Three.js canvas
   const cameraRef = useRef(null);
   const modelRef = useRef(null);
   const controlsRef = useRef(null);
   
-  const introRef = useRef(null);
-  const text1Ref = useRef(null);
-  const text2Ref = useRef(null);
-  const text3Ref = useRef(null);
-  const text4Ref = useRef(null);
-  const text5Ref = useRef(null);
-  const text6Ref = useRef(null); // Final Text
+  const introTextRef = useRef(null);
+  const featureText1Ref = useRef(null);
+  const featureText2Ref = useRef(null);
+  const featureText3Ref = useRef(null);
+  const featureText4Ref = useRef(null);
+  const featureText5Ref = useRef(null);
+  const finalConclusionTextRef = useRef(null);
 
   useEffect(() => {
+    // Detect if the user is on a touch device
     if (typeof window !== 'undefined') {
       setIsTouchDevice(navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
     }
   }, []);
 
-  const controlsEnabled = isHovered || isTouchDevice;
-  const contentVisibility = { visibility: isLoaded ? 'visible' : 'hidden' };
+  // Disable orbit controls on mobile to prevent scroll locking issues
+  const areControlsEnabled = isTouchDevice ? false : isHovered;
 
   useLayoutEffect(() => {
     if (!isLoaded || !modelRef.current || !cameraRef.current || !containerRef.current) return;
 
-    const ctx = gsap.context(() => {
-      // OPTIMIZED MASTER TIMELINE
-      const tl = gsap.timeline({
+    // Utilize GSAP matchMedia to handle responsive scroll animations perfectly
+    const matchMediaContext = gsap.matchMedia();
+
+    matchMediaContext.add({
+      isDesktop: "(min-width: 769px)",
+      isMobile: "(max-width: 768px)"
+    }, (context) => {
+      const { isMobile } = context.conditions;
+
+      const scrollTimeline = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top top",
-          end: "+=600%", // Reduced to 600% for 6 items to make scrolling smoother and faster
-          scrub: 1,      // Scrub 1 provides a very smooth, lag-free response
+          end: "+=600%",
+          scrub: 1,
           pin: true,
-          anticipatePin: 1
+          anticipatePin: 1,
+          fastScrollEnd: true,
+          preventOverlaps: true
         },
       });
 
-      const allTexts = [
-        text1Ref.current, text2Ref.current, text3Ref.current, 
-        text4Ref.current, text5Ref.current, text6Ref.current
+      const allFloatingTexts = [
+        featureText1Ref.current, featureText2Ref.current, featureText3Ref.current, 
+        featureText4Ref.current, featureText5Ref.current, finalConclusionTextRef.current
       ];
 
-      // Initial Setup
-      gsap.set(allTexts, { opacity: 0, y: 40 });
-      gsap.set(introRef.current, { opacity: 1, y: 0 });
+      // Reset initial styles explicitly so backward scrolling resets seamlessly
+      gsap.set(allFloatingTexts, { opacity: 0, y: isMobile ? 20 : 40 });
+      gsap.set(introTextRef.current, { opacity: 1, y: 0 });
       cameraRef.current.position.set(0, 0, 6.5);
+      modelRef.current.scale.set(14.4, 14.4, 14.4);
+      modelRef.current.rotation.set(0, 0, 0);
 
-      // 1. Fade out Intro instantly
-      tl.to(introRef.current, { opacity: 0, y: -40, duration: 0.5, ease: "power1.inOut" }, 0);
+      // Fade out the intro section initially
+      scrollTimeline.to(introTextRef.current, { opacity: 0, y: isMobile ? -20 : -40, duration: 0.5, ease: "power1.inOut" }, 0);
 
-      // --- CONTINUOUS BACKGROUND ANIMATION (ZOOM & CAMERA) ---
-      // These run smoothly across the entire timeline (duration 6 to match 6 texts)
-      tl.to(modelRef.current.scale, { x: 34, y: 34, z: 34, ease: "none", duration: 6 }, 0);
-      tl.to(cameraRef.current.position, { y: 6.8, z: 2.8, ease: "none", duration: 6 }, 0);
+      // Define responsive scale and camera Y positions
+      const finalModelScale = isMobile ? 22 : 34;
+      const finalCameraYPosition = isMobile ? 4.5 : 6.8;
+
+      // Animate model scale and camera position continuously across the entire scroll
+      scrollTimeline.to(modelRef.current.scale, { x: finalModelScale, y: finalModelScale, z: finalModelScale, ease: "none", duration: 6 }, 0);
+      scrollTimeline.to(cameraRef.current.position, { y: finalCameraYPosition, z: isMobile ? 4 : 2.8, ease: "none", duration: 6 }, 0);
       
-      const cameraTarget = { y: 0 };
-      tl.to(cameraTarget, {
-        y: 1.2,
+      const dynamicCameraTarget = { y: 0 };
+      scrollTimeline.to(dynamicCameraTarget, {
+        y: isMobile ? 0.5 : 1.2,
         ease: "none",
         duration: 6,
         onUpdate: () => {
           if (controlsRef.current) {
-            controlsRef.current.target.set(0, cameraTarget.y, 0);
+            controlsRef.current.target.set(0, dynamicCameraTarget.y, 0);
             controlsRef.current.update();
           }
         }
       }, 0);
 
-      // --- NO-DELAY TEXT & ROTATION SEQUENCE ---
-      const rotateStep = Math.PI * 0.7; 
+      const baseRotationStep = Math.PI * 0.7; 
 
-      allTexts.forEach((text, index) => {
-        // Calculate exact start time for each sequence to eliminate delays
-        const startTime = index * 1; 
+      // Sequence texts and model rotation step-by-step
+      allFloatingTexts.forEach((textElement, index) => {
+        const sequenceStartTime = index * 1; 
 
-        // Smooth Rotation
-        tl.to(modelRef.current.rotation, { y: rotateStep * (index + 1), ease: "power2.inOut", duration: 1 }, startTime);
+        scrollTimeline.to(modelRef.current.rotation, { y: baseRotationStep * (index + 1), ease: "power2.inOut", duration: 1 }, sequenceStartTime);
+        scrollTimeline.to(textElement, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, sequenceStartTime + 0.2);
 
-        // Text Fades In
-        tl.to(text, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, startTime + 0.2);
-
-        // Text Fades Out (Except for the final text block which is index 5)
+        // Fade out all texts except the final conclusion text
         if (index < 5) {
-          tl.to(text, { opacity: 0, y: -30, duration: 0.3, ease: "power2.in" }, startTime + 0.8);
+          scrollTimeline.to(textElement, { opacity: 0, y: isMobile ? -20 : -30, duration: 0.3, ease: "power2.in" }, sequenceStartTime + 0.8);
         }
       });
 
-    }, containerRef);
+      return () => {
+        // Cleanup tweens to prevent memory leaks on resize or unmount
+        gsap.killTweensOf(modelRef.current);
+        gsap.killTweensOf(cameraRef.current);
+      };
+    });
 
-    return () => ctx.revert();
+    return () => matchMediaContext.revert();
   }, [isLoaded]);
 
   return (
-    <section className="special-feature" ref={containerRef}>
-      {/* Intro */}
-      <div className="sf-intro" ref={introRef} style={contentVisibility}>
+    <section className="special-feature" ref={containerRef} style={{ visibility: 'visible' }}>
+      
+      {/* Intro Section */}
+      <div className="sf-intro" ref={introTextRef}>
         <span className="sf-label">SPECIAL FEATURE</span>
         <h2 className="sf-heading">Experience Every Detail of Premium Coffee</h2>
         <p className="sf-desc">
@@ -173,58 +185,42 @@ export default function SpecialFeature() {
         </p>
       </div>
 
-      {/* 5 Floating Texts Sequence */}
-      <div className="sf-text-block right" ref={text1Ref} style={contentVisibility}>
+      {/* Floating Description Texts */}
+      <div className="sf-text-block right" ref={featureText1Ref}>
         <h3>Premium Roasted Beans</h3>
         <p>Carefully selected beans roasted to perfection.</p>
       </div>
-      <div className="sf-text-block left" ref={text2Ref} style={contentVisibility}>
+      <div className="sf-text-block left" ref={featureText2Ref}>
         <h3>Ethically Sourced</h3>
         <p>Harvested from sustainable, high-altitude farms for the purest quality.</p>
       </div>
-      <div className="sf-text-block right" ref={text3Ref} style={contentVisibility}>
+      <div className="sf-text-block right" ref={featureText3Ref}>
         <h3>Rich Aroma</h3>
         <p>An unforgettable fragrance crafted for true coffee lovers.</p>
       </div>
-      <div className="sf-text-block left" ref={text4Ref} style={contentVisibility}>
+      <div className="sf-text-block left" ref={featureText4Ref}>
         <h3>Precision Brewing</h3>
         <p>Engineered to extract the perfect tasting notes, every single time.</p>
       </div>
-      <div className="sf-text-block right" ref={text5Ref} style={contentVisibility}>
+      <div className="sf-text-block right" ref={featureText5Ref}>
         <h3>Exceptional Taste</h3>
         <p>Balanced flavor with smooth texture and deep character.</p>
       </div>
 
-      {/* Final Text (Center) */}
-      <div className="sf-text-block center final" ref={text6Ref} style={contentVisibility}>
+      {/* Final Conclusion Text */}
+      <div className="sf-text-block center final" ref={finalConclusionTextRef}>
         <h3>Crafted for the Perfect Moment</h3>
         <p>Every sip of Ivori Coffee is designed to deliver warmth, comfort, and an unforgettable premium experience.</p>
       </div>
 
-      {/* 3D Canvas Layer */}
-      <div
-        className="sf-canvas-container"
-        onPointerDown={(e) => {
-          // when user touches the canvas area on touch devices, enable controls
-          if (e.pointerType === 'touch' || e.pointerType === 'pen') {
-            setIsHovered(true);
-          }
-        }}
-        onPointerUp={(e) => {
-          if (e.pointerType === 'touch' || e.pointerType === 'pen') {
-            setIsHovered(false);
-          }
-        }}
-        onPointerCancel={() => setIsHovered(false)}
-        onPointerLeave={() => setIsHovered(false)}
-      >
-        <Canvas gl={{ alpha: true, antialias: true }} dpr={[1, 2]} style={{ touchAction: 'none' }}>
+      {/* 3D Canvas Implementation */}
+      <div className="sf-canvas-container">
+        <Canvas gl={{ alpha: true, antialias: true }} dpr={[1, 2]} style={{ touchAction: 'auto' }}>
           <PerspectiveCamera makeDefault ref={cameraRef} />
           
-          {/* Active only on hover for smooth scrolling anywhere else */}
           <OrbitControls 
             ref={controlsRef} 
-            enabled={controlsEnabled} 
+            enabled={areControlsEnabled} 
             enablePan={false}
             enableZoom={true}
           />
@@ -244,7 +240,9 @@ export default function SpecialFeature() {
           </Suspense>
         </Canvas>
       </div>
-      {!isLoaded && <SpecialFeatureLoader label="Loading Experience" />}
+      
+      {/* Dynamic Loader Display */}
+      {!isLoaded && <SpecialFeatureLoader progress={progress} label="Loading Experience" />}
     </section>
   );
 }
