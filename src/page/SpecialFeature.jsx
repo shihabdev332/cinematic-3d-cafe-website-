@@ -80,7 +80,10 @@ export default function SpecialFeature() {
   const finalConclusionTextRef = useRef(null);
 
   useLayoutEffect(() => {
-    if (!isLoaded || !modelRef.current || !cameraRef.current || !containerRef.current) return;
+    // Ensure all references exist before initializing GSAP to prevent Invalid scope errors
+    if (!isLoaded || !containerRef.current || !modelRef.current || !cameraRef.current) {
+      return;
+    }
 
     const matchMediaContext = gsap.matchMedia();
 
@@ -99,7 +102,8 @@ export default function SpecialFeature() {
           pin: true,
           anticipatePin: 1,
           fastScrollEnd: true,
-          preventOverlaps: true
+          preventOverlaps: true,
+          invalidateOnRefresh: true // Helps with responsive resizing
         },
       });
 
@@ -149,6 +153,9 @@ export default function SpecialFeature() {
       });
 
       return () => {
+        // Kill timeline and ScrollTrigger instance to prevent memory leaks
+        scrollTimeline.kill();
+        ScrollTrigger.getAll().forEach(t => t.kill());
         gsap.killTweensOf(modelRef.current);
         gsap.killTweensOf(cameraRef.current);
       };
