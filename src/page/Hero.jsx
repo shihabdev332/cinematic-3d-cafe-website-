@@ -156,7 +156,7 @@ const Hero = () => {
             ref={contentRightRef}
             className="md:col-span-7 md:pl-6 lg:pt-4"
           >
-            <h4 className="max-w-2xl text-orange-400 md:text-lg">
+            <h4 className="max-w-2xl text-orange-300 md:text-lg">
               Our vibe is upbeat and stylish, fueled by energetic music,
               magnetic people, and spaces that feel as good as they look.
               Our chef-driven menu delivers bold, refined dishes with
