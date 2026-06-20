@@ -316,11 +316,12 @@ export default function SpecialFeature() {
         >
           <PerspectiveCamera makeDefault ref={cameraRef} />
 
+          {/* Updated OrbitControls to allow full interaction on all devices */}
           <OrbitControls
             ref={controlsRef}
-            enablePan={false}
-            enableZoom={isHovered || isDragging} // Zoom works perfectly for multi-touch pinch on mobile
-            enableRotate={isHovered || isDragging} // Rotate works when hovered OR actively dragging
+            enablePan={true} // Enables sliding and moving the model
+            enableZoom={true} // Ensures mobile pinch-to-zoom works flawlessly
+            enableRotate={true} // Ensures mobile swipe rotation works flawlessly
             minDistance={3} // Prevents zooming in too much
             maxDistance={10} // Prevents zooming out too much
             onStart={() => setIsDragging(true)} // Keeps interaction active even if pointer leaves model while dragging
